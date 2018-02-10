@@ -13,6 +13,8 @@ public class UserErrorCode extends ErrorCode {
     public static final UserErrorCode USER_ROLE_NULL = new UserErrorCode(204, "用户角色不存在");
     public static final UserErrorCode USER_ROLE_REPEAT = new UserErrorCode(206, "用户角色重复");
 
+    public static final UserErrorCode SESSION_EXPIRED = new UserErrorCode(301, "session失效");
+
     public UserErrorCode(int code, String msg) {
         super(code, msg);
     }

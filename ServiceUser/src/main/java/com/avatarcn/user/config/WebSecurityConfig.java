@@ -6,6 +6,7 @@ import com.avatarcn.user.handler.CustomUrlAuthenticationFailureHandler;
 import com.avatarcn.user.handler.CustomUrlAuthenticationSuccessHandler;
 import com.avatarcn.user.service.CustomUserService;
 import com.avatarcn.user.session.CustomConcurrentSessionControlAuthenticationStrategy;
+import com.avatarcn.user.session.CustomSessionInformationExpiredStrategy;
 import com.avatarcn.user.session.CustomSessionRegistryImpl;
 import com.avatarcn.user.utils.Constant;
 import org.springframework.context.annotation.Bean;
@@ -65,6 +66,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Resource
     private RememberMeServices rememberMeServices;
 
+    /**
+     * 认证成功后，从数据库加载对应用户的权限，供之后的资源访问时做比对
+     * @return
+     */
     @Bean
     public UserDetailsService userDetailsService() {
         return new CustomUserService();
@@ -135,8 +140,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         LogoutHandler logoutHandler = (LogoutHandler) rememberMeServices;//登出时清除cookie
 
         http.exceptionHandling().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                .and().logout().logoutUrl("/logout").addLogoutHandler(logoutHandler).permitAll()
-                .and().exceptionHandling().accessDeniedPage("/403");
+                .and().logout().logoutUrl("/logout").addLogoutHandler(logoutHandler).permitAll();
         http.authorizeRequests().anyRequest().fullyAuthenticated();
 
         http.csrf().disable();//关闭csrf,跨站请求伪造（cross-site request forgery，CSRF）
@@ -184,7 +188,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      * @return sessionInformationExpiredStrategy
      */
     private SessionInformationExpiredStrategy sessionInformationExpiredStrategy() {
-        return new SimpleRedirectSessionInformationExpiredStrategy("/login");
+        return new CustomSessionInformationExpiredStrategy();
     }
 
     /**
@@ -199,6 +203,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return filterSecurityInterceptor;
     }
 
+    /**
+     * 认证管理器，对用户名/密码进行认证比对
+     * @return
+     * @throws Exception
+     */
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         AuthenticationManager authenticationManager = null;
@@ -212,20 +221,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     /**
      * 资源元数据
-     * url对应的权限
+     * 启动时加载系统所有的资源权限列表
      * @return
      */
     @Bean
     public FilterInvocationSecurityMetadataSource securityMetadataSource() {
         LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> requestMap = new LinkedHashMap<>();
         Collection<ConfigAttribute> data = new ArrayList<>();
-        data.add(new SecurityConfig("ROLE_USER"));
-        requestMap.put(new AntPathRequestMatcher("/home"), data);
+        //配置需要角色权限的请求路径
+        //data.add(new SecurityConfig("ROLE_USER"));
+        //requestMap.put(new AntPathRequestMatcher("/user/page"), data);//url作为key,角色权限作为value
         return new DefaultFilterInvocationSecurityMetadataSource(requestMap);
     }
 
     /**
      * 投票器
+     * 对用户访问资源与用户拥有权限进行比对，获取用户是否有权限访问该资源
      */
     private AbstractAccessDecisionManager accessDecisionManager() {
         List<AccessDecisionVoter<?>> decisionVoters = new ArrayList<>();
