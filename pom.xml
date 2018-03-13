@@ -12,7 +12,6 @@
 		<module>CloudEureka</module>
 		<module>CloudZuul</module>
 		<module>ServiceTest</module>
-		<module>ServiceTourists</module>
 	</modules>
 
 	<parent>
