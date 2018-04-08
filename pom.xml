@@ -12,6 +12,7 @@
 		<module>CloudEureka</module>
 		<module>CloudZuul</module>
 		<module>ServiceTest</module>
+		<module>ServiceUser</module>
 	</modules>
 
 	<parent>
